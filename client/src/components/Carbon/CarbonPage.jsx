@@ -33,6 +33,7 @@ const CarbonPage = () => {
         setLoading(true);
         try {
             const data = await getLatestCarbonReport();
+            
             // Check if data is valid and has expected fields (legacy/empty check)
             if (data && data.totalCarbonFootprint !== undefined) {
                 setRealData(data);
@@ -142,17 +143,17 @@ const CarbonPage = () => {
     const displayData = realData || simulatedResults;
     const isRealData = !!realData;
 
-    const { total_footprint, score, breakdown } = isRealData ?
-        {
-            total_footprint: realData.totalCarbonFootprint,
-            score: realData.sustainabilityScore,
-            breakdown: [
-                { name: 'Mobility', value: realData.breakdown.mobility, color: '#3b82f6' },
-                { name: 'Energy', value: realData.breakdown.energy, color: '#fbbf24' },
-                { name: 'Diet/Other', value: realData.breakdown.other || realData.breakdown.diet || 0, color: '#10b981' }
-            ]
-        }
-        : simulatedResults;
+   const { total_footprint, score, breakdown } = isRealData
+  ? {
+      total_footprint: realData.totalCarbonFootprint,
+      score: realData.sustainabilityScore,
+      breakdown: [
+        { name: 'Mobility', value: realData.breakdown.mobility, color: '#3b82f6' },
+        { name: 'Energy', value: realData.breakdown.energy, color: '#fbbf24' },
+        { name: 'Diet/Other', value: realData.breakdown.other, color: '#10b981' }
+      ]
+    }
+  : simulatedResults;
 
     const breakdownData = (breakdown && breakdown.length > 0) ? breakdown : [{ name: 'No Data', value: 100, color: '#e2e8f0' }];
 

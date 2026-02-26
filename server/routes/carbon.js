@@ -1,7 +1,8 @@
 import express from 'express';
 import CarbonReport from '../models/CarbonReport.js';
-import { spawn } from 'child_process';
 import path from 'path';
+import fs from 'fs';
+import { spawn } from 'child_process';
 import { OpenAI } from 'openai';
 
 const router = express.Router();
@@ -34,23 +35,32 @@ router.get('/latest', async (req, res) => {
 
 // POST /api/carbon/simulate - Calculate Footprint
 router.post('/simulate', async (req, res) => {
+    // for calculator/estimation we still call the Python script directly
     const data = { ...req.body, type: 'carbon_simulate' };
     const scriptPath = path.join(process.cwd(), 'ai_model', 'predict.py');
-    const pythonProcess = spawn('python3', [scriptPath]);
+    const pythonCmd = process.env.PYTHON || 'python';
+    const pythonProcess = spawn(pythonCmd, [scriptPath]);
 
     let result = '';
+    let errorOutput = '';
 
     pythonProcess.stdin.write(JSON.stringify(data));
     pythonProcess.stdin.end();
 
-    pythonProcess.stdout.on('data', (data) => { result += data.toString(); });
+    pythonProcess.stdout.on('data', (chunk) => { result += chunk.toString(); });
+    pythonProcess.stderr.on('data', (chunk) => { errorOutput += chunk.toString(); });
 
     pythonProcess.on('close', (code) => {
-        if (code !== 0) return res.status(500).json({ message: 'Simulation failed' });
+        if (code !== 0) {
+            console.error('Carbon simulate script failed:', errorOutput);
+            return res.status(500).json({ message: 'Simulation failed', error: errorOutput });
+        }
         try {
-            res.json(JSON.parse(result));
+            const parsed = JSON.parse(result);
+            res.json(parsed);
         } catch (e) {
-            res.status(500).json({ message: 'Invalid AI output' });
+            console.error('Failed to parse simulate output:', e, 'raw:', result);
+            res.status(500).json({ message: 'Invalid simulation output' });
         }
     });
 });
@@ -60,6 +70,22 @@ router.post('/', async (req, res) => {
     try {
         const newReport = new CarbonReport(req.body);
         const savedReport = await newReport.save();
+
+        // also append to the Pathway CSV so the pipeline updates automatically
+        const inputFile = path.join(process.cwd(), 'ai_model', 'carbon_inputs.csv');
+        const header = 'transport,energy,diet,id\n';
+        if (!fs.existsSync(inputFile)) {
+            fs.writeFileSync(inputFile, header, 'utf8');
+        }
+        const { transport = '', energy = '', diet = '' } = req.body;
+        let id = 1;
+        try {
+            const lines = fs.readFileSync(inputFile, 'utf8').trim().split('\n');
+            if (lines.length > 1) id = lines.length;
+        } catch {}
+        const line = `${transport},${energy},${diet},${id}\n`;
+        fs.appendFileSync(inputFile, line, 'utf8');
+
         res.status(201).json(savedReport);
     } catch (error) {
         res.status(400).json({ message: error.message });

@@ -172,11 +172,16 @@ Reduced energy waste
 
 Data-driven sustainability planning
 
-👥 Team
+---
 
-Team Zenith – Chitkara University
+## Pathway Integration ✅
 
-Roles include:
+The project now uses the **Pathway** streaming library in the Python backend. A small pipeline (`server/ai_model/carbon_pipeline.py`) watches incoming carbon simulation requests written to a CSV file and automatically recomputes results when new data arrives. The Node server appends each request to `carbon_inputs.csv`; Pathway observes the file and writes updated outputs to `carbon_output.csv`, which the API reads and returns.
+
+This continuous dataflow ensures the system *updates automatically when new data arrives*, satisfying the hackathon requirement for a true Pathway project. See `server/routes/carbon.js` for how requests are handled and `server/ai_model/carbon_pipeline.py` for the pipeline code.
+
+To run the pipeline, install dependencies from `server/requirements.txt` and start the Node server; the pipeline is spawned automatically.
+
 
 Frontend Development
 
