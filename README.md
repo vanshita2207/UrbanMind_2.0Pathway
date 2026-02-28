@@ -158,6 +158,13 @@ node index.js
 Backend runs on:
 http://localhost:5000
 
+> **Note:** the risk pipeline watches `server/pathway_service/risk_inputs.csv`; the
+> server will automatically seed this file with a default reading for each city if it
+> is empty, so the dashboard has something to display on first load.  If you ever see
+> "Waiting for live AQI" even after the page has loaded, make sure the CSV contains
+> data (not just a header) and that the Python process is running – editing the file
+> manually or using the in‑page form will immediately push new values.
+
 4. Python AI Model (Optional Standalone)
 cd server/ai_model
 python predict.py
@@ -167,6 +174,53 @@ python predict.py
 Increased environmental awareness
 
 Optimized commuting decisions
+
+---
+
+## Pathway Integration ✅
+
+The project now uses the **Pathway** streaming library in the Python backend to power
+live AQI/health‑risk data.  A small pipeline (`server/pathway_service/pathway_streams.py`)
+**watches a CSV file** for new measurements and automatically recomputes derived risk
+scores whenever the file is updated.  This fulfils the hackathon requirement that the
+app reacts *without manual intervention* once data enters the system.
+
+Two pipelines are running side‑by‑side:
+
+* **Carbon pipeline** – watches `server/ai_model/carbon_inputs.csv` and writes
+  results to `carbon_output.csv`.  (Used elsewhere in the app.)
+* **AQI & health‑risk pipeline** – watches `server/pathway_service/risk_inputs.csv` and
+  prints a JSON record per row to stdout; the Node server reads these lines, maintains a
+  rolling history, and broadcasts the current snapshot to clients over a WebSocket
+  at `ws://localhost:5001`.
+
+> **Important:** the PyPI `pathway` package is sometimes just a stub that prints
+> "This is not the real Pathway package".  To qualify for the Pathway track you must
+> install the real library using the instructions at https://pathway.com/developers/.
+> A lightweight fallback shim is included in the pipeline script so the app will still
+> run without it, but the stream will not then update in response to CSV changes.
+
+### Interactive data entry
+
+The dashboard page contains a city selector and a small form pre‑filled with the
+latest AQI/heat-index reading.  Typing into either field automatically sends a POST
+request to `/api/pathway/risk/update`, which appends the new values to
+`risk_inputs.csv`.  Because the Pathway pipeline is watching that file, **any row
+– whether added by the UI or by editing the file directly – triggers an immediate
+recomputation and broadcast**.  No refresh or submit button is required.
+
+To see it in action:
+
+1. run `node server/index.js` (after installing Python deps via
+   `pip install -r server/requirements.txt`).
+2. open the React app at `http://localhost:5173/app/pathway-risk`.
+3. alter the AQI/heat values using the form or by editing
+   `server/pathway_service/risk_inputs.csv`.  The numbers update instantly on the
+   page.
+
+This setup ensures the dataflow is driven by Pathway and updates automatically when
+new inputs arrive, so it fully satisfies the Pathway track criteria.
+
 
 Reduced energy waste
 

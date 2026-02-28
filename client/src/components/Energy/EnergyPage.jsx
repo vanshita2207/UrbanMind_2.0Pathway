@@ -177,13 +177,13 @@ const EnergyPage = () => {
                             </div>
                         </div>
 
-                       {/* Peak Waste Alert Box */}
-{metrics.peak_warning && (
-    <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-lg flex items-center gap-2">
-        <AlertTriangle className="w-5 h-5" />
-        High energy usage detected during peak hours!
-    </div>
-)}
+                        {/* Peak Waste Alert Box */}
+                        {metrics.peak_warning && (
+                            <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-lg flex items-center gap-2">
+                                <AlertTriangle className="w-5 h-5" />
+                                High energy usage detected during peak hours!
+                            </div>
+                        )}
 
                         {/* AI Prediction Card */}
                         <div className="bg-white/70 backdrop-blur-md p-6 rounded-xl border border-white/40 shadow-xl">

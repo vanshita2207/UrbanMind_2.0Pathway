@@ -13,11 +13,13 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "chokidar": "^5.0.0",
     "cors": "^2.8.6",
     "dotenv": "^17.2.4",
     "express": "^5.2.1",
     "mongoose": "^9.2.1",
     "nodemon": "^3.1.11",
-    "openai": "^6.21.0"
+    "openai": "^6.21.0",
+    "ws": "^8.19.0"
   }
 }
